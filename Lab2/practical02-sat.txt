@@ -1,0 +1,16 @@
+Consider the graph colouring problem.
+
+1. Encode the graph colouring problem into CNF using the pairwise encoding.
+
+2. Consider breaking symmetries in your encoding.
+
+3. Encode the graph colouring problem into CNF using the bitwise encoding.
+
+4. Find the optimal solution invoking a SAT solver iteratively.
+
+For running your software consider the following instances:
+
+http://www.cs.hbg.psu.edu/txn131/file_instances/coloring/graph_color/queen5_5.col
+http://www.cs.hbg.psu.edu/txn131/file_instances/coloring/graph_color/queen6_6.col
+http://www.cs.hbg.psu.edu/txn131/file_instances/coloring/graph_color/queen7_7.col
+

@@ -1,0 +1,57 @@
+p cnf 33 36
+-L_G_1 L_I_1 L_D_1
+-L_G_2 L_I_2 L_D_2
+-L_G_3 L_I_3 L_D_3
+L_G_1 L_G_2 L_G_3
+-L_I_1 L_G_1 L_D_1
+-L_I_2 L_G_2 L_D_2
+-L_I_3 L_G_3 L_D_3
+L_I_1 L_I_2 L_I_3
+-L_D_1 L_G_1 L_I_1
+-L_D_2 L_G_2 L_I_2
+-L_D_3 L_G_3 L_I_3
+L_D_1 L_D_2 L_D_3
+
+-D_W 1 D_C_1 -D_T_1
+-D_W 2 D_C_2 -D_T_2
+-D_W 3 D_C_3 -D_T_3
+D_W_1 D_W_2 D_W_3
+-D_C 1 D_W_1 -D_T_1
+-D_C 2 D_W_2 -D_T_2
+-D_C 3 D_W_3 -D_T_3
+D_C_1 D_C_2 D_C_3
+-D_T 1 D_C_1 -D_W_1
+-D_T 2 D_C_2 -D_W_2
+-D_T 3 D_C_3 -D_W_3
+D_T_1 D_T_2 D_T_3
+
+-P_G_1 P_B_1 P_W_1
+-P_G_2 P_B_2 P_W_2
+-P_G_3 P_B_3 P_W_3
+P_G_1 P_G_2 P_G_3
+-P_B_1 P_G_1 P_W_1
+-P_B_2 P_G_2 P_W_2
+-P_B_3 P_G_3 P_W_3
+P_B_1 P_B_2 P_B_3
+-P_W_1 P_G_1 P_B_1
+-P_W_2 P_G_2 P_B_2
+-P_W_3 P_G_3 P_B_3
+P_W_1 P_W_2 P_W_3
+
+c Lives:
+c L_G_1_3 L_G_4_6 L_G_7_9
+c Drinks:
+c D_W_10_12 D_C_13_15 D_T_16_18
+c Painted:
+c P_G_19_21 P_B_22_24 P_W_25_27
+
+
+the third house is green 21 0
+the german lives in house two 2 0
+there is one house between the house of the person drinking coffee and the blue house 13 and 24 or 22 and 15
+the persin drinking water lives in the blue house D_W_1 and P_B_1 or D_W_2 and P_B_2 or D_W_3 and P_B_3
+the italian lives to the left of the coffee drinker
+-L_I_3 					-6 0
+L_I_2 -> D_C_3 			-5 15 0
+L_I_1 -> (D_C_3 or d_c_2) 			-4 14 15 0
+

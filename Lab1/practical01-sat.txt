@@ -1,0 +1,22 @@
+1. Install a SAT solver 
+   (e.g. minisat http://minisat.se/MiniSat.html or 
+   glucose http://www.labri.fr/perso/lsimon/glucose/).
+   If needed *in this class only* use 
+   http://www.msoos.org/2013/09/minisat-in-your-browser/
+
+2. Consider the mythological puzzle (lecture 02).
+   a) Encode the problem into CNF.
+   b) Run a SAT solver to get a solution assignment.
+   c) Run a SAT solver to get a *second* solution assignment.
+
+3. Consider the houses puzzle (lecture 02).
+   a) Encode the problem into CNF.
+   b) Run a SAT solver to get a solution assignment.
+   c) Run a SAT solver to get a *second* solution assignment.
+
+4. Consider the sudoku puzzle 4 x 4.
+   a) Consider a specific instance and encode it into CNF.
+   (If needed use example instances from 
+   http://www.sudokuweb.org/easy-sudoku-4x4-for-kids/)
+   b) Run a SAT solver to get a solution assignment.
+
