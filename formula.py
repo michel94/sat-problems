@@ -11,6 +11,8 @@ class Formula:
 			self.clauses.append(right)
 		elif isinstance(right, Var):
 			self.clauses.append(Clause(right))
+		elif isinstance(right, Formula):
+			self.clauses.extend(right.clauses)
 		else:
 			raise("Wrong argument type")
 
@@ -50,6 +52,14 @@ class Clause:
 		if var:
 			self.vars.append(var)
 	def __ior__(self, right):
+		if isinstance(right, Var):
+			self.vars.append(right)
+		elif isinstance(right, Clause):
+			self.vars.extend(right.vars)
+		else:
+			raise("Wrong argument type")
+		return self
+	def __or__(self, right):
 		if isinstance(right, Var):
 			self.vars.append(right)
 		elif isinstance(right, Clause):
@@ -124,7 +134,7 @@ class Solver:
 			return Solution(True, d)
 			
 		else:
-
+			
 			stream = subprocess.call([self.solverCmd, filename, resFilename], stderr=null, stdout=null)
 			res = open(resFilename, "r")
 			l = res.readlines()
