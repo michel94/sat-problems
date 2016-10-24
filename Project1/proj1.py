@@ -57,7 +57,6 @@ class Result:
 				vmAssign.append(res)
 			print('Job ' + str(iJob) + ":", ", ".join([str(i) for i in vmAssign]) )
 
-
 		print("Servers used:", self.servers)
 
 	def __str__(self):
@@ -122,13 +121,6 @@ for i in range(1, nServers):
 	maxRes1[i] = maxRes1[i-1] + res1[i]
 	maxRes2[i] = maxRes2[i-1] + res2[i]
 
-'''
-print(res1)
-print(maxRes1)
-print(res2)
-print(maxRes2)
-print(totalRes1, totalRes2)'''
-
 
 LB = 1
 i = nServers-1
@@ -144,7 +136,6 @@ servers = minServerList(allServers, maxServers)
 while maxServers >= LB:
 	if PRETTY_OUTPUT:
 		sys.stdout.write('==== Trying with %d servers, using a list of %d ==== \r' % (maxServers, nServers) )
-	#print("Trying with", maxServers, "servers, using a list of", nServers)
 	expression = Formula()
 
 	variables = [[[Var("VM" + str(job) + "-" + str(vm) + "-" + str(server) ) for server in range(nServers)] for vm in range(len(jobs[job]))] for job in range(len(jobs))]
@@ -182,8 +173,6 @@ while maxServers >= LB:
 	expression &= AtMost(serversUsed, maxServers)
 
 	sol = Solver("minisat").solve(expression, verbose=False)
-	sys.stdout.write('\r\r\r')
-	#print("Servers:", servers[:nServers])
 
 	if sol.success:
 		
