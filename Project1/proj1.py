@@ -36,10 +36,11 @@ def minServerList(servers, needed):
 	return cores
 
 class Result:
-	def __init__(self, nServers, sol, variables, servers):
+	def __init__(self, nServers, sol, variables, serversVars, servers):
 		self.nServers = nServers
 		self.sol = sol
 		self.variables = variables
+		self.serversVars = serversVars
 		self.servers = servers
 
 	def pretty(self):
@@ -51,12 +52,13 @@ class Result:
 				res = 0
 				for i, server in enumerate(vm):
 					if self.sol[server]:
-						res = i
+						res = self.servers[i][2]
 						break
 				vmAssign.append(res)
-			print('Job ' + str(iJob) + ":", vmAssign)
+			print('Job ' + str(iJob) + ":", ", ".join([str(i) for i in vmAssign]) )
 
-		print("Servers used:", [self.sol[v] for v in self.servers])
+
+		print("Servers used:", self.servers)
 
 	def __str__(self):
 		text = []
@@ -65,26 +67,34 @@ class Result:
 			for iVm, vm in enumerate(job):
 				for iServer, server in enumerate(vm):
 					if self.sol[server]:
-						text.append("%d %d -> %d" % (iJob, iVm, iServer) )
+						text.append("%d %d -> %d" % (iJob, iVm, self.servers[iServer][2]) )
 
 		return "\n".join(text)
 
-nServers = int(input())
-servers = [0] * nServers
+f = None
+PRETTY_OUTPUT = False
+if len(sys.argv) < 2:
+	print("Usage: ./proj1.py input.txt")
+	exit(0)
+else:
+	f = open(sys.argv[1], "r")
+	if len(sys.argv) > 2:
+		if sys.argv[2] == '--pretty':
+			PRETTY_OUTPUT = True
+
+nServers = int(f.readline())
+allServers = [0] * nServers
 for i in range(nServers):
-	s = [int(i) for i in input().split()]
-	servers[s[0]] = (s[1], s[2])
+	s = [int(i) for i in f.readline().split()]
+	allServers[s[0]] = (s[1], s[2], s[0])
 
-servers = sorted(servers)
-servers.reverse()
-
-nVMs = int(input())
+nVMs = int(f.readline())
 jobs = []
 vmResources = []
 totalRes1 = 0
 totalRes2 = 0
 for i in range(nVMs):
-	s = input().split()
+	s = f.readline().split()
 	job = [int(i) for i in s[:-1]]
 	if job[0] >= len(jobs):
 		jobs.append([])
@@ -97,8 +107,8 @@ for i in range(nVMs):
 		jobs[job[0]].append(True)
 
 
-res1 = [i[0] for i in servers]
-res2 = [i[1] for i in servers]
+res1 = [i[0] for i in allServers]
+res2 = [i[1] for i in allServers]
 res1 = sorted(res1)
 res1.reverse()
 res2 = sorted(res2)
@@ -130,12 +140,15 @@ solutionFound = False
 best = None
 
 maxServers = nServers
+servers = minServerList(allServers, maxServers)
 while maxServers >= LB:
-	#sys.stdout.write('==== Trying using %d servers ==== \r' % (maxServers) )
+	if PRETTY_OUTPUT:
+		sys.stdout.write('==== Trying with %d servers, using a list of %d ==== \r' % (maxServers, nServers) )
+	#print("Trying with", maxServers, "servers, using a list of", nServers)
 	expression = Formula()
 
 	variables = [[[Var("VM" + str(job) + "-" + str(vm) + "-" + str(server) ) for server in range(nServers)] for vm in range(len(jobs[job]))] for job in range(len(jobs))]
-	serverUsed = [Var("Server" + str(server)) for server in range(len(servers))]
+	serversUsed = [Var("Server" + str(server)) for server in range(nServers)]
 
 	vmAssignment = [[] for i in range(nServers)] # encoding of assignment of servers to vm, only one variable per server can be set to true
 
@@ -143,7 +156,7 @@ while maxServers >= LB:
 		for vm in job:
 			expression &= ExactlyOnce(vm)
 			for i, v in enumerate(vm):
-				expression &= (-v | serverUsed[i])
+				expression &= (-v | serversUsed[i])
 			for i in range(len(vm)):
 				vmAssignment[i].append(vm[i])
 
@@ -166,25 +179,30 @@ while maxServers >= LB:
 		expression &= WeightedAtMost(vars, [r[0] for r in vmResources], servers[server][0])
 		expression &= WeightedAtMost(vars, [r[1] for r in vmResources], servers[server][1])
 
-	expression &= AtMost(serverUsed, maxServers)
+	expression &= AtMost(serversUsed, maxServers)
 
 	sol = Solver("minisat").solve(expression, verbose=False)
 	sys.stdout.write('\r\r\r')
 	#print("Servers:", servers[:nServers])
 
 	if sol.success:
-		solutionFound = True
-		best = Result(maxServers, sol, variables, serverUsed)
-
-		maxServers -= 1
 		
+		solutionFound = True
+		cntServers = sum([sol[s] for s in serversUsed])
+		best = Result(cntServers, sol, variables, serversUsed, servers)
+		
+		maxServers = min(maxServers, cntServers) - 1
+		servers = minServerList(allServers, maxServers)
+		nServers = len(servers)
 	else:
 		break
 
 if solutionFound:
-	#print()
-	#best.pretty()
-	print(best)
+	if PRETTY_OUTPUT:
+		print()
+		best.pretty()
+	else:
+		print(best)
 else:
 	print("No solution found")
 

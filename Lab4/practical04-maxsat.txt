@@ -1,0 +1,26 @@
+1. Install a MaxSAT solver (e.g. 
+   open-wbo http://sat.inesc-id.pt/open-wbo/, 
+   mscg http://logos.ucd.ie/web/doku.php?id=mscg).
+
+2. Encode the following problems into MaxSAT taking 
+into account the slides of lecture 6. Run a MaxSAT solver 
+to solve the specific examples given in the slides.
+
+a) minimum vertex cover (page 14)
+
+b) maximum clique (page 16)
+
+c) maximum independent set (page 16)
+
+d) design debugging (page 20)
+
+e) software upgradability problem (page 21)
+
+3. Consider the CP12 paper "Reasoning over Biological 
+Networks Using Maximum Satisfiability" available from 
+http://sat.inesc-id.pt/~jguerra/rbnms/ 
+Encode the example in Figure 1 into MaxSAT. Obtain all
+the solutions for the different kinds of repairs (section 3.2).
+
+
+
