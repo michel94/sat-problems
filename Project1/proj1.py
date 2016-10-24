@@ -2,95 +2,152 @@
 
 from math import *
 import sys
-sys.path.append('..')
 
 from formula import *
+from encoding import *
 
-auxCount = 0
-dps = []
-dpList = []
-expression = Formula()
+def nextCore(l, cores):
+	l.sort()
+	l.reverse()
 
-def ExactlyOnce(l):
-	global expression
-
-	atLeast = Clause()
-	for i in l:
-		atLeast |= i
-	expression &= atLeast
-	for i in range(len(l)):
-		for j in range(len(l)):
-			if i != j:
-				expression &= -l[i] | -l[j]
-
-def AtMost(l, k):
-	global expression, auxCount, dps
-
-	exp = Formula()
-	n = len(l)
-	size = n
-	S = [[Var('S(' + str(auxCount) + ')_' + str(i) + "_" + str(j)) for j in range(1, min(i+1, k+2) )] for i in range(1, size+1 ) ]
-	#for s in S:
-	#	print(s)
-	dps.append(S)
-	dpList.append(l)
-	auxCount += 1
+	q = [l[0]]
+	cores.append(l[0])
+	del l[0]
 	
-	for i in range(size):
-		exp &= (-l[i] | S[i][0])
-		if k < i:
-			exp &= (-S[i][k])
+	while len(q) > 0:
+		cur = q[0]
+		del q[0]
 
-	for i in range(1, size):
-		for j in range(i):
-			if j < k+1:
-				exp &= (-S[i-1][j] | S[i][j])
+		i = 0
+		while i<len(l):
+			if cur[0] < l[i][0] or cur[1] < l[i][1]:
+				q.append(l[i])
+				cores.append(l[i])
+				del l[i]
+			else:
+				i+=1
 
-	for i in range(1, size):
-		for j in range(1, i+1):
-			if j < k+1:
-				exp &= (-l[i] | -S[i-1][j-1] | S[i][j])
-	
-	expression &= exp
+def minServerList(servers, needed):
+	cores = []
+	l = list(servers)
+	while len(cores) < needed:
+		nextCore(l, cores)
+
+	return cores
+
+class Result:
+	def __init__(self, nServers, sol, variables, servers):
+		self.nServers = nServers
+		self.sol = sol
+		self.variables = variables
+		self.servers = servers
+
+	def pretty(self):
+		print("Solution found with", self.nServers, "servers")
+		print("Results:")
+		for iJob, job in enumerate(self.variables):
+			vmAssign = []
+			for vm in job:
+				res = 0
+				for i, server in enumerate(vm):
+					if self.sol[server]:
+						res = i
+						break
+				vmAssign.append(res)
+			print('Job ' + str(iJob) + ":", vmAssign)
+
+		print("Servers used:", [self.sol[v] for v in self.servers])
+
+	def __str__(self):
+		text = []
+		text.append('o ' + str(self.nServers))
+		for iJob, job in enumerate(self.variables):
+			for iVm, vm in enumerate(job):
+				for iServer, server in enumerate(vm):
+					if self.sol[server]:
+						text.append("%d %d -> %d" % (iJob, iVm, iServer) )
+
+		return "\n".join(text)
 
 nServers = int(input())
 servers = [0] * nServers
 for i in range(nServers):
 	s = [int(i) for i in input().split()]
-	servers[s[0]] = min(s[1], s[2])
+	servers[s[0]] = (s[1], s[2])
 
 servers = sorted(servers)
 servers.reverse()
 
 nVMs = int(input())
 jobs = []
+vmResources = []
+totalRes1 = 0
+totalRes2 = 0
 for i in range(nVMs):
 	s = input().split()
 	job = [int(i) for i in s[:-1]]
 	if job[0] >= len(jobs):
 		jobs.append([])
+	vmResources.append(job[2:])
+	totalRes1 += job[2]
+	totalRes2 += job[3]
 	if s[-1] == 'False':
 		jobs[job[0]].append(False)
 	else:
 		jobs[job[0]].append(True)
 
 
-while True:
-	print('========= Trying with', nServers, 'servers =========')
-	auxCount = 0
-	dps = []
-	dpList = []
+res1 = [i[0] for i in servers]
+res2 = [i[1] for i in servers]
+res1 = sorted(res1)
+res1.reverse()
+res2 = sorted(res2)
+res2.reverse()
+
+maxRes1 = [0] * nServers
+maxRes2 = [0] * nServers
+maxRes1[0] = res1[0]
+maxRes2[0] = res2[0]
+for i in range(1, nServers):
+	maxRes1[i] = maxRes1[i-1] + res1[i]
+	maxRes2[i] = maxRes2[i-1] + res2[i]
+
+'''
+print(res1)
+print(maxRes1)
+print(res2)
+print(maxRes2)
+print(totalRes1, totalRes2)'''
+
+
+LB = 1
+i = nServers-1
+while i>=0 and maxRes1[i] >= totalRes1 and maxRes2[i] >= totalRes2:
+	LB = i+1
+	i-=1
+
+solutionFound = False
+best = None
+
+maxServers = nServers
+while maxServers >= LB:
+	#sys.stdout.write('==== Trying using %d servers ==== \r' % (maxServers) )
 	expression = Formula()
-	#print(jobs)
 
 	variables = [[[Var("VM" + str(job) + "-" + str(vm) + "-" + str(server) ) for server in range(nServers)] for vm in range(len(jobs[job]))] for job in range(len(jobs))]
+	serverUsed = [Var("Server" + str(server)) for server in range(len(servers))]
 
-	vmAssignment = [[] for i in range(nServers)]
+	vmAssignment = [[] for i in range(nServers)] # encoding of assignment of servers to vm, only one variable per server can be set to true
 
-	#print('Anti-collocation:')
 	for iJob, job in enumerate(variables):
 		for vm in job:
-			ExactlyOnce(vm)
+			expression &= ExactlyOnce(vm)
+			for i, v in enumerate(vm):
+				expression &= (-v | serverUsed[i])
+			for i in range(len(vm)):
+				vmAssignment[i].append(vm[i])
+
+
 		collocation = jobs[iJob]
 		exclude = []
 		indexes = []
@@ -99,54 +156,35 @@ while True:
 				indexes.append(i)
 				exclude.append(job[i])
 
-		#print('Job ' + str(iJob) + ":", indexes)
-
 		for i in range(len(exclude)):
 			for j in range(i+1, len(exclude)):
 				for s in range(nServers):
 					expression &= (-exclude[i][s] | -exclude[j][s])
 
-	for job in variables:
-		for vm in job:
-			for i in range(len(vm)):
-				vmAssignment[i].append(vm[i])
 
 	for server, vars in enumerate(vmAssignment):
-		AtMost(vars, servers[server]) # at most k variables per server, with k=servers[server], i.e., server capacity
+		expression &= WeightedAtMost(vars, [r[0] for r in vmResources], servers[server][0])
+		expression &= WeightedAtMost(vars, [r[1] for r in vmResources], servers[server][1])
 
-	sol = Solver().solve(expression)
+	expression &= AtMost(serverUsed, maxServers)
 
-	print("Servers:", servers[:nServers])
+	sol = Solver("minisat").solve(expression, verbose=False)
+	sys.stdout.write('\r\r\r')
+	#print("Servers:", servers[:nServers])
 
 	if sol.success:
-		print("Results:")
-		for iJob, job in enumerate(variables):
-			vmAssign = []
-			for vm in job:
-				res = 0
-				for i, server in enumerate(vm):
-					if sol[server]:
-						res = i
-						break
-				vmAssign.append(res)
-			print('Job ' + str(iJob) + ":", vmAssign)
+		solutionFound = True
+		best = Result(maxServers, sol, variables, serverUsed)
 
-		nServers -= 1
-		'''
-		print('DP')
-		c = 0
-		for dp in range(len(dps)):
-			c+=1
-			for row in dps[dp]:
-				r = []
-				for v in row:
-					r.append(sol[v])
-				print(r)
-
-			print('Vars:', [sol[i] for i in dpList[dp]])
-		'''
-
+		maxServers -= 1
+		
 	else:
-		print('No solution found with', nServers, 'servers')
 		break
+
+if solutionFound:
+	#print()
+	#best.pretty()
+	print(best)
+else:
+	print("No solution found")
 
