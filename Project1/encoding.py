@@ -1,8 +1,6 @@
 from formula import *
-import time
 
 auxCount = 0
-atMostTime = 0
 
 def ExactlyOnce(l):
 	exp = Formula()
@@ -47,8 +45,7 @@ def AtMost(l, k):
 
 def WeightedAtMost(l, w, k):
 	global expression, auxCount
-	global atMostTime
-
+	
 	exp = Formula()
 	n = len(l)
 	S = [[Var('S(' + str(auxCount) + ')_' + str(i) + "_" + str(j)) for j in range(k+1)] for i in range(1, n+1 ) ]

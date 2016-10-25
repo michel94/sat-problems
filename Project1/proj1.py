@@ -168,19 +168,13 @@ while maxServers >= LB:
 					expression &= (-exclude[i][s] | -exclude[j][s])
 
 
-	start_time = time.time()
 	for server, vars in enumerate(vmAssignment):
 		expression &= WeightedAtMost(vars, [r[0] for r in vmResources], servers[server][0])
 		expression &= WeightedAtMost(vars, [r[1] for r in vmResources], servers[server][1])
-	encode_time = time.time() - start_time
 	
 	expression &= AtMost(serversUsed, maxServers)
 
-	start_time = time.time()
 	sol = Solver("minisat").solve(expression, verbose=False)
-	elapsed_time = time.time() - start_time
-	print("Encoding time:", encode_time)
-	print("Solving time:", elapsed_time)
 
 	if sol.success:
 		
