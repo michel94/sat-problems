@@ -1,8 +1,8 @@
 from formula import *
+import time
 
 auxCount = 0
-dps = []
-dpList = []
+atMostTime = 0
 
 def ExactlyOnce(l):
 	exp = Formula()
@@ -19,20 +19,12 @@ def ExactlyOnce(l):
 	return exp
 
 def AtMost(l, k):
-	global expression, auxCount, dps, dpList
-
-	'''print("AtMost encoding")
-	print("Variables:", l)
-	print("Sum:", k)'''
+	global expression, auxCount
 
 	exp = Formula()
 	n = len(l)
 	size = n
 	S = [[Var('S(' + str(auxCount) + ')_' + str(i) + "_" + str(j)) for j in range(1, min(i+1, k+2) )] for i in range(1, size+1 ) ]
-	#for s in S:
-	#	print(s)
-	dps.append(S)
-	dpList.append(l)
 	auxCount += 1
 	
 	for i in range(size):
@@ -54,44 +46,33 @@ def AtMost(l, k):
 
 
 def WeightedAtMost(l, w, k):
-	global expression, auxCount, dps
-
-	'''print("WeightedAtMost encoding")
-	print("Variables:", l)
-	print("Weights:", w)
-	print("Sum:", k)
-	print()'''
+	global expression, auxCount
+	global atMostTime
 
 	exp = Formula()
 	n = len(l)
-	S = [[Var('S(' + str(auxCount) + ')_' + str(i) + "_" + str(j)) for j in range(k+1 )] for i in range(1, n+1 ) ]
-	#for s in S:
-	#	print(s)
-	dps.append(S)
-	dpList.append(l)
+	S = [[Var('S(' + str(auxCount) + ')_' + str(i) + "_" + str(j)) for j in range(k+1)] for i in range(1, n+1 ) ]
 	auxCount += 1
 	
+	append = exp.clauses.append
 	for j in range(k):
-		if j < k:
-			if j < w[0]:
-				exp &= (-l[0] | S[0][j])
-			else:
-				exp &= -S[0][j]
-	
-	for i in range(n):
-		exp &= -S[i][k]
+		if j < w[0]:
+			append(-l[0] | S[0][j])
+		else:
+			exp &= -S[0][j]
 
+
+	exp &= -S[0][k]
 	for i in range(1, n):
+		exp &= -S[i][k]
 		for j in range(0, k+1):
 			if j < w[i]:
-				exp &= (-l[i] | S[i][j])
-			exp &= (-S[i-1][j] | S[i][j])
-
+				append(-l[i] | S[i][j])
+			append(-S[i-1][j] | S[i][j])
+	
 	for i in range(1, n):
 		for j in range(0, k-w[i]+1):
-			exp &= (-l[i] | -S[i-1][j] | S[i][j+w[i]])
-
-	#for i in range(0, n):
-	#	exp &= (-l[i] | -S[i-1][k-w[i]])
+			append(-l[i] | -S[i-1][j] | S[i][j+w[i]])
 
 	return exp
+
