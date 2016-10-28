@@ -74,12 +74,12 @@ class Result:
 f = None
 PRETTY_OUTPUT = False
 if len(sys.argv) < 2:
-	print("Usage: ./proj1.py input.txt")
+	print("Usage: ./proj1.py input.txt flags")
 	exit(0)
 else:
 	f = open(sys.argv[1], "r")
 	if len(sys.argv) > 2:
-		if sys.argv[2] == '--pretty':
+		if sys.argv[2] == '--verbose':
 			PRETTY_OUTPUT = True
 
 nServers = int(f.readline())
@@ -122,12 +122,17 @@ for i in range(1, nServers):
 	maxRes1[i] = maxRes1[i-1] + res1[i]
 	maxRes2[i] = maxRes2[i-1] + res2[i]
 
-
 LB = 1
 i = nServers-1
 while i>=0 and maxRes1[i] >= totalRes1 and maxRes2[i] >= totalRes2:
 	LB = i+1
 	i-=1
+
+for j in jobs:
+	LB = max(LB, sum(j))
+
+if PRETTY_OUTPUT:
+	print('Lower bound:', LB)
 
 solutionFound = False
 best = None
@@ -137,14 +142,13 @@ servers = minServerList(allServers, maxServers)
 while maxServers >= LB:
 	
 	if PRETTY_OUTPUT:
-		sys.stdout.write('==== Trying with %d servers, using a list of %d ==== \r' % (maxServers, nServers) )
+		print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
 	expression = Formula()
 
 	variables = [[[Var("VM" + str(job) + "-" + str(vm) + "-" + str(server) ) for server in range(nServers)] for vm in range(len(jobs[job]))] for job in range(len(jobs))]
 	serversUsed = [Var("Server" + str(server)) for server in range(nServers)]
 
 	vmAssignment = [[] for i in range(nServers)] # encoding of assignment of servers to vm, only one variable per server can be set to true
-
 	for iJob, job in enumerate(variables):
 		for vm in job:
 			expression &= ExactlyOnce(vm)
@@ -156,10 +160,8 @@ while maxServers >= LB:
 
 		collocation = jobs[iJob]
 		exclude = []
-		indexes = []
 		for i in range(len(collocation)):
 			if collocation[i]:
-				indexes.append(i)
 				exclude.append(job[i])
 
 		for i in range(len(exclude)):
@@ -167,14 +169,17 @@ while maxServers >= LB:
 				for s in range(nServers):
 					expression &= (-exclude[i][s] | -exclude[j][s])
 
-
+	if PRETTY_OUTPUT:
+		print('Encoding cardinality')
 	for server, vars in enumerate(vmAssignment):
+		if PRETTY_OUTPUT:
+			print('server', server)
 		expression &= WeightedAtMost(vars, [r[0] for r in vmResources], servers[server][0])
 		expression &= WeightedAtMost(vars, [r[1] for r in vmResources], servers[server][1])
 	
 	expression &= AtMost(serversUsed, maxServers)
-
-	sol = Solver("minisat").solve(expression, verbose=False)
+	
+	sol = Solver("minisat").solve(expression, verbose=PRETTY_OUTPUT)
 
 	if sol.success:
 		

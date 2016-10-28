@@ -1,25 +1,33 @@
-Código: Python 3.
+Aluno: Miguel Martins Duarte, nº 85016
+Código: Python 3.5, outras versões mais antigas de python 3 devem ser também compatíveis.
 SAT Solver utilizado: minisat 2.2.0
+
+UTILIZAÇÃO:
+"./proj1.py input_file"
+Correr "./proj1.py input_file --verbose" para perceber o que está o programa a fazer.
 
 DECISÕES DE IMPLEMENTAÇÃO:
 
 Codificação de restrições de cardinalidade:
-	- As restrições de cardinalidade do tipo "At Most K" são codificadas usando Sequential Weighted Counter Encoding.
-	- As restrições "Exactly Once" são codificadas usando pairwise encoding (não foi necessário outro encoding, pois este tipo de restrição apenas é usado para cada VM ser colocada em um e um só servidor).
+	- As restrições de cardinalidade do tipo "At Most K" são codificadas usando Sequential Weighted Counter Encoding ou Totalizer Encoding. O método de encoding é escolhido de acordo com o valor de K; quando K é da ordem de grandeza do número de variáveis, é escolhido o primeiro, caso contrário é escolhido o segundo.
+	- As restrições "Exactly Once" são codificadas usando pairwise encoding (não foi necessário outro encoding, pois este tipo de restrição apenas é usado para garantir que cada VM é colocada em um e um só servidor).
 
 Variáveis utilizadas:
 	- São utilizadas n variáveis para cada VM, indicando de forma unária qual o servidor a que essa VM é atribuída.
-	- São ainda utilizadas uma variável por servidor, que indica se alguma VM foi assigned a esse servidor.
+	- São ainda utilizadas uma variável por servidor, que indica se alguma VM foi lhe foi atribuida, e que portanto vai ser utilizado na solução.
 	- São ainda utilizadas as variáveis auxiliares necessárias no encoding de expressões "At Most K".
+
+Abordagem geral utilizada:
+	- A pesquisa do valor óptimo de número de servidores é feita começando com o número máximo de servidores e reduzindo progressivamente até um determinado lower bound.
+	- A redução do número de servidores é feita para o tamanho encontrado na solução devolvida na iteração anterior pelo SAT Solver, subtraindo-lhe 1.
+	- Assumindo que procuramos uma solução com S servidores, numa determinada iteração. Para reduzir o número de variáveis e cláusulas, coloca-se o número mínimo de servidores necessário para obter uma solução de tamanho S. O algoritmo utilizado dá-nos um conjunto de pelo menos S servidores, tal que cada servidor s_i do conjunto domine todos os servidores s_j deixados de fora do conjunto, ou seja, s_i.ram >= s_j.ram & s_i.cpu >= s_j.cpu.
+	- O lower bound para a pesquisa é dado pelo máximo entre dois valores:
+		> O máximo de servidores com anti-collocation encontrados nas jobs;
+		> O mínimo de servidores necessários para resolver o problema de "fraccional knapsack" com cada um dos dois recursos individualmente, seguido do máximo entre esses dois valores.
 
 Restrições definidas:
 	- Restrições "At Most K" pesadas para cada servidor e para cada um dos dois recursos.
 	- Uma restrição "At Most K" não pesada para a contagem do número de servidores utilizados, que tem que ser menor ou igual ao tamanho da solução que estamos a procurar no momento.
 	- Restrições "Exactly Once" para que cada VM seja colocada em um e um só servidor.
 	- Restrições que impedem duas VMs com anti-colocação, pertencentes à mesma job, de serem colocadas no mesmo servidor.
-
-Abordagem geral utilizada:
-	- A pesquisa do valor óptimo de número de servidores é feita começando com o número máximo de servidores e reduzindo progressivamente.
-	- A redução do número de servidores é feita para o número encontrado na solução devolvida pelo SAT Solver menos 1.
-	- Assumindo que procuramos uma solução com S servidores. Para reduzir o número de variáveis e clausulas, coloca-se o número mínimo de servidores necessário para obter uma solução de tamanho S. O algoritmo utilizado dá-nos pelo menos S servidores, tal que cada servidor s_i do conjunto domine todos os servidores s_j deixados de fora do conjunto, ou seja, s_i.ram >= s_j.ram && s_i.cpu >= s_j.cpu para todos os s_i e s_j.
 

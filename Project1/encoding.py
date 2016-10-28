@@ -44,6 +44,8 @@ def AtMost(l, k):
 
 
 def WeightedAtMost(l, w, k):
+	if len(l) < sum(w)*10:
+		return Totalizer(l, w, k)
 	global expression, auxCount
 	
 	exp = Formula()
@@ -70,6 +72,60 @@ def WeightedAtMost(l, w, k):
 	for i in range(1, n):
 		for j in range(0, k-w[i]+1):
 			append(-l[i] | -S[i-1][j] | S[i][j+w[i]])
+
+	return exp
+
+totals = []
+
+def Totalizer(l, w, k):
+	global auxCount, totals
+	groups = []
+	for i in range(len(l)):
+		groups.append( {w[i]: l[i]} )
+
+	exp = Formula()
+	varCount = 1
+
+	while len(groups) >= 2:
+		ng = {}
+		gr1 = groups[0]
+		gr2 = groups[1]
+		del groups[0]
+		del groups[0]
+		#print(len(groups), len(gr1), len(gr2))
+		for b in gr2:
+			if b not in ng:
+				ng[b] = Var('T(%d)%d' % (auxCount, varCount))
+				totals.append(ng[b])
+				varCount += 1
+				#print("clause:", b, ng[b])
+			exp &= (-gr2[b] | ng[b])
+
+		for a in gr1:
+			if a not in ng:
+				ng[a] = Var('T(%d)%d' % (auxCount, varCount))
+				totals.append(ng[a])
+				varCount += 1
+				#print("clause:", a, ng[a])
+			exp &= (-gr1[a] | ng[a])
+			for b in gr2:
+				if a+b not in ng:
+					ng[a+b] = Var('T(%d)%d' % (auxCount, varCount))
+					totals.append(ng[a+b])
+					varCount += 1
+				#print("clause:", a, b, a+b, ng[a+b])
+				exp &= (-gr1[a] | -gr2[b] | ng[a+b])
+
+		clean = {}
+		for i in ng:
+			if i > k:
+				exp &= -ng[i]
+			else:
+				clean[i] = ng[i]
+
+		groups.append(clean)
+
+	auxCount += 1
 
 	return exp
 

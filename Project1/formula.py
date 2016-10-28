@@ -14,7 +14,7 @@ class Formula:
 		elif isinstance(right, Formula):
 			self.clauses.extend(right.clauses)
 		else:
-			raise("Wrong argument type")
+			raise Exception("Argument of type %s not accepted" % (type(right)))
 
 		return self
 	def __str__(self):
@@ -149,6 +149,4 @@ class Solver:
 					if i != 0:
 						d[rev[abs(i)]] = i > 0
 				return Solution(True, d)
-
-
 
