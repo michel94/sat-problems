@@ -1,0 +1,6 @@
+declarações/opções
+definição logica
+declarações variáveis/funcoes
+restriçoes/formula
+verificar satisfabilidade
+modelo?

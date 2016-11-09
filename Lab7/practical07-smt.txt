@@ -1,0 +1,19 @@
+1. Install an SMT solver (e.g. z3, Yices).
+Z3: https://github.com/Z3Prover/z3/releases
+Yices: http://yices.csl.sri.com/
+
+The binaries of Z3 are available to several architectures.
+
+The next exercises should be solved using SMT-LIB v2 language.
+http://smtlib.cs.uiowa.edu/language.shtml
+
+2. Consider the houses puzzle (lecture 03).
+   a) Encode the problem into SMT
+   b) Run the SMT solver to get a solution assignment.
+
+3. Consider the sudoku puzzle 4 x 4.
+   a) Consider a specific instance and encode it into SMT using QF_UF.
+   b) Run a SMT solver to get a solution assignment.
+   c) Expand the SMT2 file to solve more than one sudoku instance.
+   c) Encode the same instance into SMT using QF_LIA
+   d) Run a SMT solver to get a solution assignment.

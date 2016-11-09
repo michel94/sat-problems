@@ -1,0 +1,8 @@
+color
+blue: 1, green: 2, white: 3
+
+nationalities
+dutch: 1, german: 2, italian: 3
+
+beverage
+coffee: 1, tea: 2, water: 3

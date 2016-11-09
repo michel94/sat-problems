@@ -1,0 +1,50 @@
+(set-option :produce-assignments true)
+(set-logic AUFLIA)
+(declare-fun color(Int Int) Bool)
+(declare-fun lives(Int Int) Bool)
+(declare-fun drinks(Int Int) Bool)
+
+(assert (forall ((h Int)(a Int)(b Int))
+	(=> (not (= a b))
+	(=> (color h a) (not (color h b) )))
+))
+(assert (forall ((h Int)(a Int)(b Int))
+	(=> (not (= a b))
+	(=> (lives h a) (not (lives h b) )))
+))
+(assert (forall ((h Int)(a Int)(b Int))
+	(=> (not (= a b))
+		(=> (drinks h a) (not (drinks h b) )))
+))
+
+(assert (color 3 2))
+(assert (or 
+	(and (color 1 1) (drinks 3 1))
+	(and (color 3 1) (drinks 1 1))))
+
+(assert (forall ((h Int))
+	(=> (drinks h 3) (color h 1) ) ))
+
+
+(assert (forall ((a Int))
+	(=> (>= a 1)(<= a 3)
+		(exists ((h Int))
+			(and (>= h 1) (<= h 3) (color h a))
+))))
+(assert (forall ((a Int))
+	(=> (>= a 1)(<= a 3)
+		(exists ((h Int))
+			(and (>= h 1) (<= h 3) (lives h a))))
+))
+(assert (forall ((a Int))
+	(=> (>= a 1)(<= a 3)
+		(exists ((h Int))
+			(and (>= h 1) (<= h 3) (drinks h a))))
+))
+
+
+(check-sat)
+(get-model)
+
+
+
