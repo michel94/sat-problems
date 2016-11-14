@@ -6,7 +6,7 @@ from random import shuffle
 def sumPerServer(vms, weights, server, serverRes, serverCount):
 	l1 = [If(vms[i] == server, weights[i][0], 0) for i in range(len(vms))]
 	l2 = [If(vms[i] == server, weights[i][1], 0) for i in range(len(vms))]
-	clauses = [Implies(Or([v == server for v in vms]), serverCount)]
+	clauses = [Implies(Or([v == server for v in vms]), (serverCount==1) )]
 	t = simplify(sum(l1))
 	
 	clauses.extend([simplify(t <= serverRes[0]), simplify(sum(l2) <= serverRes[1])])
@@ -42,6 +42,37 @@ def minServerList(servers, needed):
 
 	return cores
 
+def setupSolver(servers, nServers, maxServers, serverCount):
+	s = Solver()
+	print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
+	for i in serverCount:
+		s.add(i >= 0)
+		s.add(i <= 1)
+
+	vms = []
+	for j in range(len(variables)):
+		job = variables[j]
+		vms.extend(job)
+		d = []
+		for v, vm in enumerate(job):
+			s.add(vm >= 0)
+			s.add(vm < nServers)
+			if jobs[j][v]:
+				d.append(vm)
+
+		if len(d) > 1:
+			s.add(Distinct(d))
+
+	for server in range(nServers):
+		clauses = sumPerServer(vms, vmResources, server, servers[server], serverCount[server])
+		s.append(clauses)
+	
+	s.push()
+	s.add(simplify(sum(serverCount) <= maxServers))
+
+	print('Solving...')
+	return s
+
 def ascendingSearch(LB, allServers):
 	global solution
 	nServers = LB
@@ -50,30 +81,9 @@ def ascendingSearch(LB, allServers):
 
 	best = None
 	while maxServers <= len(allServers):
-		s = Solver()
-		print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
-		serverCount = [Bool("S" + str(i)) for i in range(nServers)]
+		serverCount = [Int("S" + str(i)) for i in range(nServers)]
+		s = setupSolver(servers, nServers, maxServers, serverCount)
 
-		vms = []
-		for j in range(len(variables)):
-			job = variables[j]
-			vms.extend(job)
-			d = []
-			for v, vm in enumerate(job):
-				s.add(vm >= 0)
-				s.add(vm < nServers)
-				if jobs[j][v]:
-					d.append(vm)
-
-			if len(d) > 1:
-				s.add(Distinct(d))
-
-		s.add( simplify(sum([If(cnt, 0, 1) for cnt in serverCount]) <= maxServers) )
-		for server in range(nServers):
-			clauses = sumPerServer(vms, vmResources, server, servers[server], serverCount[server])
-			s.append(clauses)	
-
-		print('Solving...')
 		if s.check() == sat:
 			best = s.model()
 			solution[0] = maxServers
@@ -90,11 +100,11 @@ def ascendingSearch(LB, allServers):
 def fracKnapsack(jobs, servers):
 	jobs = jobs + []
 	iServers = servers
-	nExec = 100
+	nExec = 20
 	minServers = len(iServers)
 
 	for _ in range(nExec):
-		servers = [[i[0], i[1]] for i in iServers]
+		servers = [[i[0], i[1]] for i in minServerList(iServers, len(iServers))]
 		shuffle(jobs)
 		restart = False
 
@@ -126,47 +136,36 @@ def descendingSearch(LB, allServers):
 	global solution
 
 	maxServers = fracKnapsack(problem, allServers) # Greedy upper bound
-	print("Using Greedy upper bound")
 	servers = minServerList(allServers, maxServers)
 	nServers = len(servers)
 	
 	best = None
+	createSolver = True
+	s = None
 	while maxServers >= LB:
-		s = Solver()
-		print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
-		serverCount = [Bool("S" + str(i)) for i in range(nServers)]
+		serverCount = [Int("S" + str(i)) for i in range(nServers)]
+		if createSolver:
+			createSolver = False
+			s = setupSolver(servers, nServers, maxServers, serverCount)
+		else:
+			s.pop()
+			s.push()
+			s.add(simplify(sum(serverCount) <= maxServers))
 
-		vms = []
-		for j in range(len(variables)):
-			job = variables[j]
-			vms.extend(job)
-			d = []
-			for v, vm in enumerate(job):
-				s.add(vm >= 0)
-				s.add(vm < nServers)
-				if jobs[j][v]:
-					d.append(vm)
-
-			if len(d) > 1:
-				s.add(Distinct(d))
-
-		s.add( simplify(sum([If(cnt, 0, 1) for cnt in serverCount]) <= maxServers) )
-		for server in range(nServers):
-			clauses = sumPerServer(vms, vmResources, server, servers[server], serverCount[server])
-			s.append(clauses)	
-
-		print('Solving...')
 		if s.check() == sat:
 			best = s.model()
 			solution[0] = maxServers
 			solution[1] = servers + []
 			
-			cntServers = sum([is_true(best[s]) for s in serverCount])
+			cntServers = sum([best[s].as_long() for s in serverCount])
 			maxServers = min(maxServers, cntServers) - 1
 			servers = minServerList(allServers, maxServers)
-			nServers = len(servers)
-			
+			if len(servers) < nServers:
+				createSolver = True
+				nServers = len(servers)
+
 		else:
+			print('Solution not found for %d servers' % maxServers)
 			break
 
 	return best
@@ -242,7 +241,7 @@ if PRETTY_OUTPUT:
 variables = [[Int("VM" + str(job) + "-" + str(vm) ) for vm in range(len(jobs[job]))] for job in range(len(jobs))]
 
 solution = [None, None]
-#bestAsc = ascendingSearch(LB, allServers)
+#best = ascendingSearch(LB, allServers)
 #s = solution[0]
 best = descendingSearch(LB, allServers)
 '''s2 = solution[0]
