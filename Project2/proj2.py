@@ -42,8 +42,12 @@ def minServerList(servers, needed):
 
 	return cores
 
+def MySolver():
+	return Then('simplify', 'elim01', 'propagate-ineqs', 'elim-term-ite', 'qflia', 'smt').solver()
+	#return Solver()
+
 def setupSolver(servers, nServers, maxServers, serverCount):
-	s = Solver()
+	s = MySolver()
 	print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
 	for i in serverCount:
 		s.add(i >= 0)
@@ -67,40 +71,17 @@ def setupSolver(servers, nServers, maxServers, serverCount):
 		clauses = sumPerServer(vms, vmResources, server, servers[server], serverCount[server])
 		s.append(clauses)
 	
-	s.push()
+	#s.push()
 	s.add(simplify(sum(serverCount) <= maxServers))
-
+	
 	print('Solving...')
 	return s
 
-def ascendingSearch(LB, allServers):
-	global solution
-	nServers = LB
-	maxServers = nServers
-	servers = minServerList(allServers, maxServers)
-
-	best = None
-	while maxServers <= len(allServers):
-		serverCount = [Int("S" + str(i)) for i in range(nServers)]
-		s = setupSolver(servers, nServers, maxServers, serverCount)
-
-		if s.check() == sat:
-			best = s.model()
-			solution[0] = maxServers
-			solution[1] = servers
-			break
-		else:
-			maxServers += 1
-			servers = minServerList(allServers, maxServers)
-			nServers = len(servers)
-			print('No solution found')
-
-	return best
 
 def fracKnapsack(jobs, servers):
 	jobs = jobs + []
 	iServers = servers
-	nExec = 20
+	nExec = 50
 	minServers = len(iServers)
 
 	for _ in range(nExec):
@@ -131,6 +112,29 @@ def fracKnapsack(jobs, servers):
 
 	return minServers
 
+def ascendingSearch(LB, allServers):
+	global solution
+	maxServers = LB
+	servers = minServerList(allServers, maxServers)
+	nServers = len(servers)
+
+	best = None
+	while maxServers <= len(allServers):
+		serverCount = [Int("S" + str(i)) for i in range(nServers)]
+		s = setupSolver(servers, nServers, maxServers, serverCount)
+
+		if s.check() == sat:
+			best = s.model()
+			solution[0] = maxServers
+			solution[1] = servers
+			break
+		else:
+			maxServers += 1
+			servers = minServerList(allServers, maxServers)
+			nServers = len(servers)
+			print('No solution found')
+
+	return best
 
 def descendingSearch(LB, allServers):
 	global solution
@@ -145,24 +149,25 @@ def descendingSearch(LB, allServers):
 	while maxServers >= LB:
 		serverCount = [Int("S" + str(i)) for i in range(nServers)]
 		if createSolver:
-			createSolver = False
+			#createSolver = False
 			s = setupSolver(servers, nServers, maxServers, serverCount)
 		else:
-			s.pop()
-			s.push()
-			s.add(simplify(sum(serverCount) <= maxServers))
+			pass
+			#s.pop(1)
+			#s.push()
+			#s.add(simplify(sum(serverCount) <= maxServers))
 
 		if s.check() == sat:
 			best = s.model()
 			solution[0] = maxServers
 			solution[1] = servers + []
 			
-			cntServers = sum([best[s].as_long() for s in serverCount])
+			cntServers = sum([best[server].as_long() for server in serverCount])
 			maxServers = min(maxServers, cntServers) - 1
 			servers = minServerList(allServers, maxServers)
-			if len(servers) < nServers:
-				createSolver = True
-				nServers = len(servers)
+			nServers = len(servers)
+			#if len(servers) < nServers:
+			createSolver = True
 
 		else:
 			print('Solution not found for %d servers' % maxServers)
@@ -241,6 +246,12 @@ if PRETTY_OUTPUT:
 variables = [[Int("VM" + str(job) + "-" + str(vm) ) for vm in range(len(jobs[job]))] for job in range(len(jobs))]
 
 solution = [None, None]
+
+#set_option(verbose=10)
+#set_option(relevancy=0)
+#describe_tactics()
+#print("\nProbes:\n")
+#describe_probes()
 #best = ascendingSearch(LB, allServers)
 #s = solution[0]
 best = descendingSearch(LB, allServers)
