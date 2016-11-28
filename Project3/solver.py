@@ -7,7 +7,7 @@ from pymzn import *
 class Solver:
 	def __init__(self):
 		self.res = None
-		self.f = open("tmp.dzn", "w")
+		self.f = open("data.dzn", "w")
 
 	def putInt(self, name, v):
 		self.f.write("%s = %d;\n" % (name, v))
@@ -20,7 +20,7 @@ class Solver:
 	def check(self):
 		try:
 			self.f.close()
-			self.res = minizinc("problem.mzn", "tmp.dzn")[0]
+			self.res = minizinc("problem.mzn", "data.dzn")[0]
 			return sat
 		except MiniZincUnsatisfiableError as e:
 			return unsat
