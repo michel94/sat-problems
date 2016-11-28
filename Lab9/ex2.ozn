@@ -1,0 +1,3 @@
+output [((("saldo = "++show(i))++" = ")++show(saldo[i]))++"\n" | i in 0..duracao, ];
+int: duracao = 8;
+array [0..duracao] of float: saldo;

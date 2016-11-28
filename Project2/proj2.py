@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 from z3 import *
 from random import shuffle
@@ -6,7 +6,6 @@ from random import shuffle
 def sumPerServer(vms, weights, server, serverRes, serverCount):
 	l1 = [If(vms[i] == server, weights[i][0], 0) for i in range(len(vms))]
 	l2 = [If(vms[i] == server, weights[i][1], 0) for i in range(len(vms))]
-	#clauses = [Implies(Or([v == server for v in vms]), (serverCount==1) )]
 	clauses = [Implies(Or([v == server for v in vms]), serverCount)]
 	t = simplify(sum(l1))
 	
@@ -45,14 +44,11 @@ def minServerList(servers, needed):
 
 def MySolver():
 	return Then('simplify', 'elim01', 'propagate-ineqs', 'elim-term-ite', 'qflia', 'smt').solver()
-	#return Solver()
-
+	
 def setupSolver(servers, nServers, maxServers, serverCount):
 	s = MySolver()
-	print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
-	#for i in serverCount:
-	#	s.add(i >= 0)
-	#	s.add(i <= 1)
+	if PRETTY_OUTPUT:
+		print('==== Trying with %d servers, using a list of %d ====' % (maxServers, nServers))
 
 	vms = []
 	for j in range(len(variables)):
@@ -72,9 +68,11 @@ def setupSolver(servers, nServers, maxServers, serverCount):
 		clauses = sumPerServer(vms, vmResources, server, servers[server], serverCount[server])
 		s.append(clauses)
 	
-	#s.add(simplify(sum(serverCount) <= maxServers))
+	s.add(variables[0][0] == 0)
+
 	s.push()
-	s.add( simplify(sum([If(cnt, 0, 1) for cnt in serverCount]) <= maxServers) )
+	if nServers != maxServers:
+		s.add( simplify(sum([If(cnt, 0, 1) for cnt in serverCount]) <= maxServers) )
 	
 	print('Solving...')
 	return s
@@ -123,7 +121,6 @@ def ascendingSearch(LB, allServers):
 
 	best = None
 	while maxServers <= len(allServers):
-		#serverCount = [Int("S" + str(i)) for i in range(nServers)]
 		serverCount = [Bool("S" + str(i)) for i in range(nServers)]
 		s = setupSolver(servers, nServers, maxServers, serverCount)
 
@@ -136,7 +133,8 @@ def ascendingSearch(LB, allServers):
 			maxServers += 1
 			servers = minServerList(allServers, maxServers)
 			nServers = len(servers)
-			print('No solution found')
+			if PRETTY_OUTPUT:
+				print('No solution found')
 
 	return best
 
@@ -151,18 +149,17 @@ def descendingSearch(LB, allServers):
 	createSolver = True
 	s = None
 	while maxServers >= LB:
-		#serverCount = [Int("S" + str(i)) for i in range(nServers)]
 		serverCount = [Bool("S" + str(i)) for i in range(nServers)]
 		if createSolver:
 			createSolver = False
 			s = setupSolver(servers, nServers, maxServers, serverCount)
 		else:
-			print('==== Trying with %d servers, keeping a list of %d ====' % (maxServers, nServers))
+			if PRETTY_OUTPUT:
+				print('==== Trying with %d servers, keeping a list of %d ====' % (maxServers, nServers))
 			s.pop(1)
 			s.push()
 			s.add( simplify(sum([If(cnt, 0, 1) for cnt in serverCount]) <= maxServers) )
-			#s.add(simplify(sum(serverCount) <= maxServers))
-
+			
 		if s.check() == sat:
 			best = s.model()
 			solution[0] = maxServers
@@ -176,7 +173,8 @@ def descendingSearch(LB, allServers):
 			nServers = len(servers)
 
 		else:
-			print('Solution not found for %d servers' % maxServers)
+			if PRETTY_OUTPUT:
+				print('Solution not found for %d servers' % maxServers)
 			break
 
 	return best
@@ -256,16 +254,11 @@ solution = [None, None]
 set_option(relevancy=10)
 #set_option(verbose=10)
 #describe_tactics()
-#print("\nProbes:\n")
 #describe_probes()
-#best = ascendingSearch(LB, allServers)
-#s = solution[0]
-best = descendingSearch(LB, allServers)
-'''s2 = solution[0]
-if s != s2:
-	print("Error")
-	exit(0)
-'''
+
+best = ascendingSearch(LB, allServers)
+#best = descendingSearch(LB, allServers)
+
 maxServers = solution[0]
 bestServers = solution[1]
 

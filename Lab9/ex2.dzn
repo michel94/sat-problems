@@ -1,0 +1,3 @@
+saldoInicial = 1000;
+juro = 0.04;
+%duracao = 5;

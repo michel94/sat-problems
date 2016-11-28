@@ -1,0 +1,34 @@
+Aluno: Miguel Martins Duarte, nº 85016
+Código: Python 3, usando z3 4.5.1, ou Python 2 para versões mais antigas de z3.
+SMT Solver utilizado: z3 4.5.1
+
+UTILIZAÇÃO:
+"./proj2.py input_file"
+Correr "./proj2.py input_file --verbose" para tentar perceber o que está o programa a fazer.
+O módulo z3 deve estar instalado globalmente.
+
+DECISÕES DE IMPLEMENTAÇÃO:
+
+Variáveis utilizadas:
+	- É utilizada, para cada VM, uma variável inteira que indica a que servidor esta é atribuida (vm_i).
+	- É ainda utilizada uma variável booleana por servidor, que indica se alguma VM foi lhe foi atribuida, e que portanto vai ser utilizado na solução (s_i).
+
+Abordagem geral utilizada:
+	- A pesquisa do valor óptimo de número de servidores é feita começando num determinado lower bound de servidores e aumentando progressivamente até um determinado upper bound (pesquisa ascendente).
+	- Assume-se que procuramos uma solução com S servidores, numa determinada iteração. Para reduzir o número de variáveis e cláusulas, coloca-se o número mínimo de servidores necessário para obter uma solução de tamanho S. O algoritmo utilizado dá-nos um conjunto de pelo menos S servidores, tal que cada servidor s_i do conjunto domine todos os servidores s_j deixados de fora do conjunto, ou seja, s_i.ram >= s_j.ram & s_i.cpu >= s_j.cpu.
+	- O lower bound para a pesquisa é dado pelo máximo entre dois valores:
+		> O máximo de servidores com anti-collocation encontrados nas jobs;
+		> O mínimo de servidores necessários para resolver o problema de "fraccional knapsack" com cada um dos dois recursos individualmente, seguido do máximo entre esses dois valores.
+	- O upper bound é dado pela mínima solução obtida ao correr várias vezes um algoritmo para obter soluções aleatórias. Essas soluções são geradas colocando uma vm de cada vez nos servidores. Para isso, é percorrida a lista de servidores e colocado no primeiro que ainda tenha recursos disponíveis.
+
+Restrições definidas:
+	- Restrições do tipo sum(if(vm_i == s_j, w_i, 0) para todas as i vms) <= capacity[j], para cada server j utilizado e para cada uma dos dois recursos.
+	- Restrições Distinct para as vms de um job com o valor de anti-colocação a verdadeiro
+	- Restrições de Implicação para cada vm colocada num server j, colocando s_j a verdadeiro
+	- Uma restrição sum(s_j para todos os j servers) <= maxServers, sendo maxServers o número de servers utilizados na solução de que estamos à procura
+
+Outros:
+	- Foi utilizado um solver personalizado com algumas teorias e processadores de fórmulas escolhidos e definidos para serem executadas por ordem. Entre eles, encontram-se uma de simplificação de restrições, uma de propagação de inequações, uma de eliminação de clausulas If-Then-Else e uma teoria para aritmética linear inteira. Caso não se consiga resolver o problema, é chamado o solver por omissão.
+	- Utiliza-se uma heuristica de propagação de restrições chamada "relevancy".
+	- Uma solução de pesquisa descendente foi também implementada. A vantagem desta relativamente à ascendente é que começa por encontrar soluções, parando quando já não for possível (ou ultrapassar o lower bound). A descendente garante que se encontra apenas uma vez uma solução UNSAT, o que é vantajoso, dado que o tempo que o solver demora a verificar que não há solução é normalmente muito maior do que a encontrar um solução existente. Ainda assim, para as instâncias que tive acesso, o lower bound é certeiro no tamanho da solução a procurar, pelo que acaba por ser mais eficiente. Para testes com casos degenerados, é natural que a solução descendente seja mais eficiente, pois a redução do número de servidores é feita para o tamanho encontrado na solução devolvida na última iteração.
+
