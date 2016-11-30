@@ -68,13 +68,14 @@ def setupSolver(servers, nServers, maxServers, serverCount):
 		clauses = sumPerServer(vms, vmResources, server, servers[server], serverCount[server])
 		s.append(clauses)
 	
-	s.add(variables[0][0] == 0)
+	dct = {}
+	for i in range(len(servers)):
+		dct[servers[i][2]] = i
 
 	s.push()
 	if nServers != maxServers:
 		s.add( simplify(sum([If(cnt, 0, 1) for cnt in serverCount]) <= maxServers) )
 	
-	print('Solving...')
 	return s
 
 
@@ -255,7 +256,6 @@ set_option(relevancy=10)
 #set_option(verbose=10)
 #describe_tactics()
 #describe_probes()
-
 best = ascendingSearch(LB, allServers)
 #best = descendingSearch(LB, allServers)
 
