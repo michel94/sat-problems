@@ -245,3 +245,4 @@ if solver.check() == sat:
 
 else:
 	print('UNSAT')
+

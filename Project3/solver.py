@@ -30,15 +30,14 @@ class Solver():
 		stream = subprocess.call([self.solverCmd, "model.mzn", "data.dzn"], stderr=null, stdout=res)
 		res = open(resFilename, "r")
 		l = res.readlines()
-		#print(l)
+		if l[0].startswith('=====UNSATISFIABLE====='):
+			return unsat
 		l = [int(i) for i in l[0].split()]
 		self.res = {}
 		self.res['vmAssignment'] = l
 		self.res['servers'] = set(l)
 		return sat
 		
-		#return unsat
-
 	def model(self):
 		return self.res
 

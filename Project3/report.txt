@@ -25,12 +25,15 @@ Abordagem geral utilizada:
 	- O lower bound para a pesquisa é dado pelo máximo entre dois valores:
 		> O máximo de servidores com anti-colocação encontrados na mesma job;
 		> O mínimo de servidores necessários para resolver o problema de "fraccional knapsack" com cada um dos dois recursos individualmente, seguido do máximo entre esses dois valores.
-	- O lower bound é utilizado para definir que o solução será de cardinalidade maior ou igual a este valor, permitindo portanto que o solver pare assim que uma solução deste tamanho é encontrada.
+	- O lower bound é utilizado para definir que a solução será de cardinalidade maior ou igual a este valor, permitindo portanto que o solver pare assim que uma solução deste tamanho é encontrada.
 	- O upper bound (UB) é dado pela solução mínima obtida ao correr várias vezes um algoritmo para obter soluções aleatórias. Essas soluções são geradas colocando uma vm de cada vez nos servidores. Para isso, é percorrida a lista de servidores e colocado no primeiro que ainda tenha recursos disponíveis.
 	- O upper bound permite restrigir o tamanho da solução a procurar e permite também restringir o número de servidores utilizados na pesquisa de soluções e que são fornecidos ao solver. Assim, o solver precisa de receber um número de servidores maior ou igual a UB, de forma a que estes escolhidos dominem todos os outros não incluidos na lista. Ou seja, um conjunto de pelo menos UB servidores, tal que cada servidor s_i do conjunto domine todos os servidores s_j deixados de fora do conjunto: s_i.ram >= s_j.ram & s_i.cpu >= s_j.cpu.
 
 Restrições definidas:
-	- Para fazer a distribuição de vms pelos servidores, são usadas duas restrições bin_packing_capa (pertencem às bibliotecas standard), uma para cada recurso. Esta função recebe um array com as capacidades de cada de servidor e um array com a quantidade de recursos utilizados por cada vm.
-	- Para definir as restrições de anti-colocação, é usada a função alldifferent. O array de vms é reordenado de modo a que intervalos de vms pertencentes à mesma job e que peçam anti-colocação sejam colocados consecutivamente.
-	- Para definir a restrição de minimização usa-se a função nvalue, que nos dá o número de elementos distintos existentes num array, que é o que pretendemos minimizar, para o array vmAssignment. Defini-se também que nvalue(vmAssignment) >= LB, como descrito atrás.
+	- Para fazer a distribuição de vms pelos servidores, são usadas duas restrições bin_packing_capa (função pertencente às bibliotecas standard), uma para cada recurso. Esta função recebe um array com as capacidades de cada servidor e um array com a quantidade de recursos utilizados por cada vm.
+	- Para definir as restrições de anti-colocação, é usada a função alldifferent. O array de vms é reordenado de modo a que intervalos de vms pertencentes à mesma job e que peçam anti-colocação sejam colocados consecutivamente, sendo aplicado alldifferent nestes intervalos.
+	- Para definir a restrição de minimização usa-se a função nvalue, que nos dá o número de elementos distintos existentes num array, que é o que pretendemos minimizar, para o array vmAssignment. Define-se também que UB >= nvalue(vmAssignment) >= LB, como descrito atrás.
+
+Outros:
+	- O solver utilizado para instâncias pequenas é o mzn-g12mip, pois permitiu obter resultados em poucos segundos para todos os casos mais pequenos. Para casos maiores, é escolhido o solver mzn-gecode. Este solver consegue resolver casos de teste maiores se forem relativamente fáceis (ou seja, se existirem muitas soluções de cardinalidade igual ao valor de lower bound). Normalmente, outros solvers não resolvem estas instâncias num intervalo de tempo considerado útil.
 
