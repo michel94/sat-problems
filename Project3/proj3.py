@@ -32,9 +32,44 @@ def minServerList(servers, needed):
 
 	return cores
 
+def randomSolution(jobs, servers):
+	jobs = jobs + []
+	iServers = servers
+	nExec = 1000
+	minServers = len(iServers)
+	backupServers = [[i[0], i[1]] for i in minServerList(iServers, len(iServers))]
+
+	for _ in range(nExec):
+		servers = [[i[0], i[1]] for i in backupServers]
+		shuffle(jobs)
+		restart = False
+
+		best = 0
+		for j in jobs:
+			col = set()
+			for vm in j:
+				ok = False
+				for s in range(len(servers)):
+					if (not vm[2] or s not in col) and vm[0] <= servers[s][0] and vm[1] <= servers[s][1]:
+						col.add(s)
+						best = max(best, s+1)
+						servers[s][0] -= vm[0]
+						servers[s][1] -= vm[1]
+						ok = True
+						break
+				
+				if not ok:
+					restart = True
+			if restart:
+				break
+		if not restart:
+			minServers = min(minServers, best)
+
+	return minServers
+
 f = None
 solverPath = None
-PRETTY_OUTPUT = False
+VERBOSE = False
 if len(sys.argv) < 2:
 	print("Usage: ./proj3.py input.txt flags")
 	exit(0)
@@ -43,7 +78,7 @@ else:
 		if arg.startswith("--"):
 			arg = arg[2:]
 			if arg == 'verbose':
-				PRETTY_OUTPUT = True
+				VERBOSE = True
 			elif arg.startswith("solver="):
 				solverPath = arg[7:]
 		else:
@@ -53,9 +88,6 @@ else:
 if f == None:
 	print('No test instance provided')
 	exit(1)
-
-if PRETTY_OUTPUT and solverPath != None:
-	print("Using %s solver" % solverPath)
 
 nServers = int(f.readline())
 allServers = [0] * nServers
@@ -92,7 +124,14 @@ for j in jobs:
 	jobRes[0] = max(jobRes[0], sum([i[0] for i in j]))
 	jobRes[1] = max(jobRes[1], sum([i[1] for i in j]))
 
-s = Solver()
+
+if solverPath == None:
+	if nVMs * nServers < 3000:
+		solverPath = "mzn-g12mip"
+	else:
+		solverPath = "mzn-gecode"
+if VERBOSE and solverPath != None:
+	print("==== Using %s solver ====" % solverPath)
 
 def sortKey(t):
 	return not t[2]
@@ -115,7 +154,7 @@ for j in jobs:
 		i+=1
 	i-=1
 
-	if i > 0:
+	if i > 1:
 		nJobs += 1
 		startIndex.append(size)
 		endIndex.append(size+i)
@@ -155,12 +194,20 @@ for j in jobs:
 	LB = max(LB, sum([i[2] for i in j]))
 
 
+if VERBOSE:
+	print('==== Computing upper bound ====')
 
-servers = minServerList(allServers, LB)
+UB = nServers
+tries = 10
+while LB + 2 < UB and tries > 0:
+	UB = min(UB, randomSolution(jobs, allServers)) # Greedy upper bound
+	tries -= 1
+
+servers = minServerList(allServers, UB)
 nServers = len(servers)
 
-if PRETTY_OUTPUT:
-	print('==== Trying with %d servers, using a list of %d ====' % (LB, nServers))
+if VERBOSE:
+	print('==== Solving with %d servers, using a list of %d ====' % (LB, nServers))
 
 res1Server = [i[0] for i in servers]
 res2Server = [i[1] for i in servers]
@@ -170,6 +217,7 @@ solver.putInt('nServers', nServers)
 solver.putInt('nVms', nVMs)
 solver.putInt('nJobs', nJobs)
 solver.putInt('LB', LB)
+solver.putInt('UB', UB)
 solver.putList('res1Vms', res1Vms)
 solver.putList('res2Vms', res2Vms)
 solver.putList('res1Server', res1Server)

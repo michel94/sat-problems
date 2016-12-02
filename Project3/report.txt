@@ -1,0 +1,36 @@
+Aluno: Miguel Martins Duarte, nº 85016
+Código: Python 3, 
+Minizinc: Versão 2.1.0 do MiniZinc-IDE (que contem as bibliotecas standard e os solvers utilizados)
+
+UTILIZAÇÃO:
+"./proj3.py input_file"
+Opções possíveis:
+"--verbose" para tentar perceber o que está o programa a fazer.
+"--solver=SOLVER_CMD" para resolver o problema usando o um solver específico.
+
+DECISÕES DE IMPLEMENTAÇÃO:
+
+Variáveis utilizadas:
+	Variáveis de Input:
+	- Variáveis inteiras nServers, nVms, nJobs, LB, que são, respectivamente, número de servidores fornecidos para procura de solução, número total de VMs, número de jobs com mais do que uma VM com anti-colocação, e lower bound para a solução do problema.
+	- Arrays de inteiros res1Server, res2Server, res1Vms, res2Vms, que contém a capacidade de cada server e os recursos necessários para cada vm.
+	- Arrays de inteiros jobStart e jobEnd. O array de vms é reordenado de modo a que intervalos de vms pertencentes à mesma job e que peçam anti-colocação sejam colocados consecutivamente. Assim, jobStart[i] e jobEnd[i] são os indices nos quais começa e acaba cada intervalo.
+	Variáveis de Output:
+	- Um array de inteiros que indica, para cada VM, o servidor a qual esta é atribuida (vmAssignment). Representa a solução do problema.
+
+Abordagem geral utilizada:
+	- O problema é codificado como um problema de minimização (neste caso, minimização do número de servidores utilizados).
+	
+	- Para ajudar o solver, pretende-se restringir ao máximo o espaço de procura. Para isso, defini-se o lower bound e o upper bound da solução pretendida. 
+	- O lower bound para a pesquisa é dado pelo máximo entre dois valores:
+		> O máximo de servidores com anti-colocação encontrados na mesma job;
+		> O mínimo de servidores necessários para resolver o problema de "fraccional knapsack" com cada um dos dois recursos individualmente, seguido do máximo entre esses dois valores.
+	- O lower bound é utilizado para definir que o solução será de cardinalidade maior ou igual a este valor, permitindo portanto que o solver pare assim que uma solução deste tamanho é encontrada.
+	- O upper bound (UB) é dado pela solução mínima obtida ao correr várias vezes um algoritmo para obter soluções aleatórias. Essas soluções são geradas colocando uma vm de cada vez nos servidores. Para isso, é percorrida a lista de servidores e colocado no primeiro que ainda tenha recursos disponíveis.
+	- O upper bound permite restrigir o tamanho da solução a procurar e permite também restringir o número de servidores utilizados na pesquisa de soluções e que são fornecidos ao solver. Assim, o solver precisa de receber um número de servidores maior ou igual a UB, de forma a que estes escolhidos dominem todos os outros não incluidos na lista. Ou seja, um conjunto de pelo menos UB servidores, tal que cada servidor s_i do conjunto domine todos os servidores s_j deixados de fora do conjunto: s_i.ram >= s_j.ram & s_i.cpu >= s_j.cpu.
+
+Restrições definidas:
+	- Para fazer a distribuição de vms pelos servidores, são usadas duas restrições bin_packing_capa (pertencem às bibliotecas standard), uma para cada recurso. Esta função recebe um array com as capacidades de cada de servidor e um array com a quantidade de recursos utilizados por cada vm.
+	- Para definir as restrições de anti-colocação, é usada a função alldifferent. O array de vms é reordenado de modo a que intervalos de vms pertencentes à mesma job e que peçam anti-colocação sejam colocados consecutivamente.
+	- Para definir a restrição de minimização usa-se a função nvalue, que nos dá o número de elementos distintos existentes num array, que é o que pretendemos minimizar, para o array vmAssignment. Defini-se também que nvalue(vmAssignment) >= LB, como descrito atrás.
+

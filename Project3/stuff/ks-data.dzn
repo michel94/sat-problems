@@ -1,4 +1,0 @@
-n = 3;
-capacity = 4;
-profits = [1,2,2];
-weights = [3,2,1];

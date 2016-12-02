@@ -27,10 +27,10 @@ class Solver():
 		null = open(os.devnull, 'w')
 		resFilename = "result.out"
 		res  = open(resFilename, 'w')
-		stream = subprocess.call([self.solverCmd, "problem.mzn", "data.dzn"], stderr=null, stdout=res)
+		stream = subprocess.call([self.solverCmd, "model.mzn", "data.dzn"], stderr=null, stdout=res)
 		res = open(resFilename, "r")
 		l = res.readlines()
-		print(l)
+		#print(l)
 		l = [int(i) for i in l[0].split()]
 		self.res = {}
 		self.res['vmAssignment'] = l
