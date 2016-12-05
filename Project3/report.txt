@@ -1,19 +1,19 @@
 Aluno: Miguel Martins Duarte, nº 85016
 Código: Python 3, 
-Minizinc: Versão 2.1.0 do MiniZinc-IDE (que contem as bibliotecas standard e os solvers utilizados)
+Minizinc: Versão 2.1.0 do MiniZinc-IDE (que contém as bibliotecas standard e os solvers utilizados). Assume-se que os respectivos solvers estão instalados globalmente.
 
 UTILIZAÇÃO:
 "./proj3.py input_file"
 Opções possíveis:
 "--verbose" para tentar perceber o que está o programa a fazer.
-"--solver=SOLVER_CMD" para resolver o problema usando o um solver específico.
+"--solver=SOLVER_CMD" para resolver o problema usando um solver específico.
 
 DECISÕES DE IMPLEMENTAÇÃO:
 
 Variáveis utilizadas:
 	Variáveis de Input:
 	- Variáveis inteiras nServers, nVms, nJobs, LB, que são, respectivamente, número de servidores fornecidos para procura de solução, número total de VMs, número de jobs com mais do que uma VM com anti-colocação, e lower bound para a solução do problema.
-	- Arrays de inteiros res1Server, res2Server, res1Vms, res2Vms, que contém a capacidade de cada server e os recursos necessários para cada vm.
+	- Arrays de inteiros res1Server, res2Server, res1Vms, res2Vms, que contêm a capacidade de cada server e os recursos necessários para cada vm.
 	- Arrays de inteiros jobStart e jobEnd. O array de vms é reordenado de modo a que intervalos de vms pertencentes à mesma job e que peçam anti-colocação sejam colocados consecutivamente. Assim, jobStart[i] e jobEnd[i] são os indices nos quais começa e acaba cada intervalo.
 	Variáveis de Output:
 	- Um array de inteiros que indica, para cada VM, o servidor a qual esta é atribuida (vmAssignment). Representa a solução do problema.
